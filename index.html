@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6dd5ed, #2193b0);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 350px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .container:hover {
+            transform: scale(1.02);
+        }
+        input {
+            padding: 10px;
+            width: 90%;
+            margin-bottom: 15px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        input:focus {
+            border-color: #0056b3;
+        }
+        button {
+            padding: 10px;
+            width: 95%;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            font-size: 16px; /* Increase font size */
+        }
+        button:first-child {
+            background-color: #007BFF; /* Button color for "Get Weather" */
+            color: white;
+        }
+        button:first-child:hover {
+            background-color: #0056b3; /* Darker shade for hover */
+        }
+        button:last-child {
+            background-color: #28a745; /* Button color for "Use My Location" */
+            color: white;
+            margin-top: 10px; /* Space between buttons */
+        }
+        button:last-child:hover {
+            background-color: #218838; /* Darker shade for hover */
+        }
+        .toggle-temp {
+            background-color: #ffc107; /* Button color for "Toggle Temp" */
+            color: white;
+            margin-top: 10px;
+        }
+        .toggle-temp:hover {
+            background-color: #e0a800; /* Darker shade for hover */
+        }
+        .weather-info {
+            margin-top: 20px;
+            color: #333;
+        }
+        .icon {
+            width: 80px; /* Size of the weather icon */
+            margin: 10px 0;
+        }
+        .social-share {
+            margin-top: 20px;
+        }
+        .user-profile {
+            margin-top: 20px;
+        }
+        .user-profile h3 {
+            color: #007BFF;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather App</h1>
+    <div class="container">
+        <input type="text" id="city" placeholder="Enter city name">
+        <button onclick="getWeather()">Get Weather</button>
+        <button onclick="getLocation()">Use My Location</button>
+        <button class="toggle-temp" onclick="toggleTemperature()">Switch to Fahrenheit</button>
+        <div class="weather-info" id="weather-info"></div>
+        <div class="social-share">
+            <button onclick="shareWeather()">Share on Social Media</button>
+        </div>
+        <div class="user-profile">
+            <h3>User Profile</h3>
+            <input type="text" id="username" placeholder="Enter your name">
+            <button onclick="saveProfile()">Save Profile</button>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = '6526bed028bff09738652ced64b90e05'; // Replace with your OpenWeatherMap API key
+        let isCelsius = true; // State variable to track temperature unit
+
+        async function getWeather() {
+            const city = document.getElementById('city').value.trim();
+            if (!city) {
+                document.getElementById('weather-info').innerHTML = '<p style="color: red;">Please enter a city name.</p>';
+                return;
+            }
+
+            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('City not found');
+                const data = await response.json();
+                displayWeather(data);
+            } catch (error) {
+                document.getElementById('weather-info').innerHTML = `<p style="color: red;">${error.message}</p>`;
+            }
+        }
+
+        function displayWeather(data) {
+            const tempCelsius = data.main.temp; // Temperature in Celsius
+            const windSpeed = data.wind.speed;
+            const humidity = data.main.humidity;
+            const clouds = data.clouds.all;
+            const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString();
+            const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString();
+            const iconCode = data.weather[0].icon;
+            const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+            let tempDisplay = isCelsius ? `${tempCelsius}°C` : `${convertToFahrenheit(tempCelsius)}°F`;
+            const description = data.weather[0].description;
+
+            // Display the weather information
+            document.getElementById('weather-info').innerHTML = `
+                <img src="${iconUrl}" alt="Weather Icon" class="icon">
+                <p>Temperature: ${tempDisplay}</p>
+                <p>${description.charAt(0).toUpperCase() + description.slice(1)}</p>
+                <p>Wind Speed: ${windSpeed} m/s</p>
+                <p>Humidity: ${humidity}%</p>
+                <p>Cloudiness: ${clouds}%</p>
+                <p>Sunrise: ${sunrise}</p>
+                <p>Sunset: ${sunset}</p>
+            `;
+        }
+
+        function convertToFahrenheit(celsius) {
+            return Math.round((celsius * 9/5) + 32); // Convert Celsius to Fahrenheit
+        }
+
+        function toggleTemperature() {
+            isCelsius = !isCelsius; // Toggle the state
+            const city = document.getElementById('city').value.trim();
+            if (city) {
+                getWeather(); // Fetch weather again to update the display
+                const button = document.querySelector('.toggle-temp');
+                button.textContent = isCelsius ? 'Switch to Fahrenheit' : 'Switch to Celsius';
+            }
+        }
+
+        async function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+                    try {
+                        const response = await fetch(apiUrl);
+                        if (!response.ok) throw new Error('Location not found');
+                        const data = await response.json();
+                        displayWeather(data);
+                    } catch (error) {
+                        document.getElementById('weather-info').innerHTML = `<p style="color: red;">${error.message}</p>`;
+                    }
+                }, () => {
+                    document.getElementById('weather-info').innerHTML = '<p style="color: red;">Unable to retrieve your location.</p>';
+                });
+            } else {
+                document.getElementById('weather-info').innerHTML = '<p style="color: red;">Geolocation is not supported by this browser.</p>';
+            }
+        }
+
+        function shareWeather() {
+            const city = document.getElementById('city').value;
+            const weatherDetails = document.getElementById('weather-info').innerText;
+            const shareText = `Current weather in ${city}:\n${weatherDetails}`;
+            const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+            window.open(shareUrl, '_blank');
+        }
+
+        function saveProfile() {
+            const username = document.getElementById('username').value;
+            if (username) {
+                localStorage.setItem('username', username);
+                alert('Profile saved! Welcome, ' + username);
+            } else {
+                alert('Please enter a name.');
+            }
+        }
+
+        window.onload = function() {
+            const storedUsername = localStorage.getItem('username');
+            if (storedUsername) {
+                document.getElementById('username').value = storedUsername;
+                alert('Welcome back, ' + storedUsername + '!');
+            }
+        };
+    </script>
+</body>
+</html>
